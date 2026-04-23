@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>EJU Math Visualizer | Elsa Lab</title>
+    <title>EJU Math Mastery | Elsa Visual Laboratory</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
@@ -17,21 +17,21 @@
         .bg-line { font-weight: 900; font-style: italic; line-height: 0.82; color: rgba(255, 255, 255, 0.07); text-transform: uppercase; }
         #bg-elsa { font-size: 21vw; letter-spacing: -10px; }
         #bg-math { font-size: 8.8vw; letter-spacing: 4px; margin-top: -10px; }
-        #sidebar { position: absolute; left: 40px; top: 40px; bottom: 120px; width: 310px; z-index: 100; overflow-y: auto; pointer-events: auto; }
+        #sidebar { position: absolute; left: 40px; top: 40px; bottom: 120px; width: 330px; z-index: 100; overflow-y: auto; padding-right: 10px; }
         .sidebar-section { margin-bottom: 10px; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
         .section-header { padding: 15px 20px; cursor: pointer; font-size: 0.72rem; font-weight: 800; display: flex; justify-content: space-between; background: rgba(255,255,255,0.05); }
         .section-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
-        .sidebar-section.active .section-content { max-height: 800px; }
-        .nav-item { padding: 10px 25px; cursor: pointer; font-size: 0.8rem; color: rgba(255,255,255,0.4); transition: 0.2s; border-top: 1px solid rgba(255,255,255,0.02); }
+        .sidebar-section.active .section-content { max-height: 1000px; }
+        .nav-item { padding: 10px 25px; cursor: pointer; font-size: 0.8rem; color: rgba(255,255,255,0.45); transition: 0.2s; border-top: 1px solid rgba(255,255,255,0.02); }
         .nav-item.active { color: #f6bd60; font-weight: 600; border-left: 4px solid #f6bd60; background: rgba(255,255,255,0.05); }
-        #right-panel { position: absolute; right: 60px; top: 60px; width: 550px; display: flex; flex-direction: column; align-items: flex-end; z-index: 100; }
-        #m-formula-display { font-size: 2.8rem; color: #fff; min-height: 140px; text-align: right; text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        #right-panel { position: absolute; right: 60px; top: 60px; width: 500px; display: flex; flex-direction: column; align-items: flex-end; z-index: 100; }
+        #m-formula-display { font-size: 2.5rem; color: #fff; min-height: 130px; text-align: right; text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         #drawer-container { width: 100%; background: rgba(255,255,255,0.12); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); overflow: hidden; transition: max-height 0.4s ease; max-height: 55px; }
-        #drawer-container.open { max-height: 700px; }
+        #drawer-container.open { max-height: 750px; }
         #drawer-handle { padding: 18px 25px; cursor: pointer; display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem; }
         #drawer-content { padding: 0 25px 30px 25px; color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.8; }
-        .hl-point { color: #f6bd60; font-weight: 700; margin-top: 15px; display: block; }
-        .hl-trap { color: #ff7675; font-weight: 700; margin-top: 10px; display: block; border-left: 3px solid #ff7675; padding-left: 10px; }
+        .hl-p { color: #f6bd60; font-weight: 700; margin-top: 15px; display: block; }
+        .hl-t { color: #ff7675; font-weight: 700; margin-top: 10px; display: block; border-left: 3px solid #ff7675; padding-left: 10px; }
         #controls { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); width: 500px; display: flex; align-items: center; gap: 20px; z-index: 100; }
         input[type=range] { flex-grow: 1; accent-color: #fff; cursor: pointer; height: 2px; }
         .play-btn { background: #fff; border: none; color: #3b6b7a; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -46,7 +46,7 @@
     <div id="right-panel">
         <div id="m-formula-display"></div>
         <div id="drawer-container">
-            <div id="drawer-handle" onclick="toggleDrawer()"><span id="ui-title">幾何含義與易錯點</span><span>▿</span></div>
+            <div id="drawer-handle" onclick="toggleDrawer()"><span id="ui-title">幾何本質與留考重點</span><span>▿</span></div>
             <div id="drawer-content"></div>
         </div>
     </div>
@@ -61,51 +61,63 @@
     let progress = 0.01, isPaused = false, isWaiting = false, currentLang = 'zh-hant', curC = 0, curI = 0;
     const SPEED = 0.0035;
 
-    // --- EJU 數學全大綱核心幾何邏輯庫 ---
+    // --- EJU 數學全考綱數據庫 (全手動填寫) ---
     const mathLibrary = [
-        { cat: { 'zh-hant': "I. 數與式 / 二次函數", 'ja': "数と式 / 二次関数" }, items: [
-            { t: { 'zh-hant': "絕對值：原點距離", 'ja': "絶対値：距離" }, f: "y = |x|", d: { 'zh-hant': "<span class='hl-point'>含義：</span>絕對值代表數軸上點到原點的距離。3D模型展示了原本穿過 X 軸的直線在 $x=0$ 處被強制「向上折疊」成 V 字型。", 'ja': "絶対値は原点からの距離。3Dでは直線が $x=0$ で折り返される様子を示します。" }, g: (p) => {
-                const pts = []; for(let i=-5; i<=5; i+=0.1) pts.push(new THREE.Vector3(i, Math.abs(i < 0 ? i*(1-2*p) : i), 0));
-                return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, 0.12, 8, false);
+        { cat: { 'zh-hant': "I. 數與式 (Expansions)", 'ja': "数と式" }, items: [
+            { t: { 'zh-hant': "絕對值：距離摺疊", 'ja': "絶対値と折れ線" }, f: "y = |x - a|", d: { 'zh-hant': "<span class='hl-p'>本質：</span>點與點的距離。3D展示圖像在臨界點處翻轉。<br><span class='hl-t'>易錯點：</span>含有文字參數時討論不全。", 'ja': "場合分けの境界点に注意。" }, g: (p) => {
+                const pts = [new THREE.Vector3(-5,5*p,0), new THREE.Vector3(0,0,0), new THREE.Vector3(5,5*p,0)];
+                return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, 0.15, 8, false);
+            }}
+        ]},
+        { cat: { 'zh-hant': "II. 二次函數 (Quadratic)", 'ja': "二次関数" }, items: [
+            { t: { 'zh-hant': "動軸問題最大最小", 'ja': "動軸の最大・最小" }, f: "y = a(x-p)^2+q", d: { 'zh-hant': "<span class='hl-p'>本質：</span>對稱軸與定義域相對位置。3D展示拋物線生成。<br><span class='hl-t'>易錯點：</span>求最大值必看區間中點。", 'ja': "軸 $p$ と範囲の中点との比較が必須。" }, g: (p) => {
+                const pts = []; for(let x=-4; x<=4; x+=0.1) if(Math.abs(x)<p*4.5) pts.push(new THREE.Vector3(x, x*x*0.3, 0));
+                return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.length>1?pts:[new THREE.Vector3(0,0,0),new THREE.Vector3(0,0.1,0)]), 64, 0.12, 8, false);
             }},
-            { t: { 'zh-hant': "拋物線與頂點式", 'ja': "放物線と頂点" }, f: "y = a(x-p)^2+q", d: { 'zh-hant': "<span class='hl-point'>含義：</span>頂點 $(p, q)$ 是圖像的核心。3D模型展示了拋物線從頂點出發對稱伸展的生成過程。<br><span class='hl-trap'>易錯點：</span>求最大值時，若對稱軸偏離區間中點，必須比較兩端點高度。", 'ja': "頂点 $(p, q)$ を中心に放物線が生成されます。範囲の中点との比較を忘れずに。" }, g: (p) => {
-                const pts = []; for(let x=-4; x<=4; x+=0.1) if(Math.abs(x) < p*4.5) pts.push(new THREE.Vector3(x, x*x*0.3, 0));
-                return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.length>1?pts:[new THREE.Vector3(0,0,0),new THREE.Vector3(0.01,0.01,0)]), 64, 0.12, 8, false);
-            }}
+            { t: { 'zh-hant': "判別式與 X 軸位置", 'ja': "判別式 D" }, f: "D = b^2 - 4ac", d: { 'zh-hant': "D 決定交點數量。3D 展示圓環與橫軸的接觸點。", 'ja': "Dの符号で共有点の個数が決まる。" }, g: (p) => new THREE.TorusGeometry(2, 0.5 * p, 16, 64) }
         ]},
-        { cat: { 'zh-hant': "II. 三角函數", 'ja': "三角関数" }, items: [
-            { t: { 'zh-hant': "正弦定理與外接圓", 'ja': "正弦定理と外接円" }, f: "\\frac{a}{\\sin A} = 2R", d: { 'zh-hant': "<span class='hl-point'>含義：</span>三角形的對邊與對角正弦之比恆等於外接圓直徑。3D模型展示了一個三角形在圓內生成，並與圓周連動。", 'ja': "三角形の辺と角の関係が外接円の直径 $2R$ に等しいことを示します。" }, g: (p) => {
-                const group = new THREE.Group();
-                const circle = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.05, 16, 100, Math.PI*2*p), new THREE.MeshBasicMaterial({color: 0xf6bd60}));
-                group.add(circle);
-                if(p > 0.5) {
-                    const triPts = [new THREE.Vector3(0,2.5,0), new THREE.Vector3(2.1,-1.2,0), new THREE.Vector3(-2.1,-1.2,0), new THREE.Vector3(0,2.5,0)];
-                    const tri = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(triPts), 32, 0.08, 8, false), new THREE.MeshBasicMaterial({color: 0xffffff, transparent:true, opacity: (p-0.5)*2}));
-                    group.add(tri);
+        { cat: { 'zh-hant': "III. 三角比 (Course 1)", 'ja': "図形と計量" }, items: [
+            { t: { 'zh-hant': "正弦定理精確比例", 'ja': "正弦定理" }, f: "\\frac{a}{\\sin A} = 2R", d: { 'zh-hant': "<span class='hl-p'>幾何含義：</span>三角形頂點精確落在半徑為 R 的圓上。3D展示邊長 $a$ 隨角度變化的精確比例。", 'ja': "三角形が外接円 $2R$ に内接する様子を示します。" }, g: (p) => {
+                const gr = new THREE.Group();
+                const circle = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.04, 16, 100, Math.PI*2*p), new THREE.MeshBasicMaterial({color:0xf6bd60}));
+                gr.add(circle);
+                const a = 2*Math.PI*0.1, b = 2*Math.PI*0.4, c = 2*Math.PI*0.7; // 精確夾角
+                const v1 = new THREE.Vector3(Math.cos(a)*2.5, Math.sin(a)*2.5, 0);
+                const v2 = new THREE.Vector3(Math.cos(b)*2.5, Math.sin(b)*2.5, 0);
+                const v3 = new THREE.Vector3(Math.cos(c)*2.5, Math.sin(c)*2.5, 0);
+                if(p>0.8) {
+                    const tri = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([v1,v2,v3,v1]), 32, 0.1, 8, false), new THREE.MeshBasicMaterial({color:0xffffff}));
+                    gr.add(tri);
                 }
-                return group;
-            }},
-            { t: { 'zh-hant': "三角合成的波動", 'ja': "三角関数の合成" }, f: "y = \\sqrt{a^2+b^2}\\sin(\\theta + \\alpha)", d: { 'zh-hant': "<span class='hl-point'>含義：</span>將不同相位的正弦與餘弦波合體。3D展示一條在三維空間中不斷旋轉、螺旋上升的波。", 'ja': "異なる波を一つのサイン波に統合します。3Dスパイラル波でその美しさを示します。" }, g: (p) => {
-                const pts = []; for(let i=0; i<p*10; i+=0.1) pts.push(new THREE.Vector3(Math.cos(i)*2, i-5, Math.sin(i)*2));
-                return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 100, 0.15, 8, false);
+                return gr;
             }}
         ]},
-        { cat: { 'zh-hant': "III. 微積分與體積", 'ja': "積分と体積" }, items: [
-            { t: { 'zh-hant': "旋轉體：圓盤堆疊", 'ja': "回転体の体積" }, f: "V = \\pi \\int_{a}^{b} y^2 dx", d: { 'zh-hant': "<span class='hl-point'>含義：</span>定積分求體積的本質是將無數個極薄的圓盤（CD片）疊加。3D展示了圓柱體積微元沿軸線一個個「掃描」出來的過程。", 'ja': "極薄の円盤を積み重ねて体積を求める積分の本質を可視化します。" }, g: (p) => {
-                const group = new THREE.Group();
-                const segments = Math.floor(p * 20);
-                for(let i=0; i<=segments; i++) {
-                    const radius = 1 + Math.sin(i/5)*0.5;
-                    const disk = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.1, 32), new THREE.MeshStandardMaterial({color: 0x84a59d, roughness: 0.1, metalness: 0.2}));
-                    disk.position.y = i * 0.2 - 2;
-                    group.add(disk);
+        { cat: { 'zh-hant': "IV. 指數與對數 (II)", 'ja': "指数・対数関数" }, items: [
+            { t: { 'zh-hant': "對數不等式方向", 'ja': "対数不等式" }, f: "\\log_a x > \\log_a y \\iff x < y \\, (a < 1)", d: { 'zh-hant': "<span class='hl-t'>重點：</span>底數小於 1 時不等號方向反轉。", 'ja': "真数条件 $x>0$ を忘れずに。" }, g: (p) => {
+                const pts=[]; for(let i=0.1; i<6; i+=0.1) if(i<p*6) pts.push(new THREE.Vector3(i-3, Math.log2(i), 0));
+                return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.length>1?pts:[new THREE.Vector3(0,0,0),new THREE.Vector3(0,0.1,0)]), 64, 0.1, 8, false);
+            }}
+        ]},
+        { cat: { 'zh-hant': "V. 數列 (B)", 'ja': "数列" }, items: [
+            { t: { 'zh-hant': "等比級數螺旋和", 'ja': "等比数列の和" }, f: "S_n = \\frac{a(r^n-1)}{r-1}", d: { 'zh-hant': "複利效應與收斂。3D螺旋體現增長規律。", 'ja': "項数 $n$ の判定ミスに注意。" }, g: (p) => new THREE.TorusKnotGeometry(1.8, 0.4*p, 128, 16, 2, 3) }
+        ]},
+        { cat: { 'zh-hant': "VI. 向量 (B)", 'ja': "ベクトル" }, items: [
+            { t: { 'zh-hant': "內積與空間夾角", 'ja': "ベクトルの内積" }, f: "\\vec{a} \\cdot \\vec{b} = |a||b|\\cos\\theta", d: { 'zh-hant': "垂直則內積為 0。3D掃描夾角範圍。", 'ja': "垂直条件は内積0。" }, g: (p) => new THREE.TorusGeometry(2, 0.1, 16, 100, Math.PI*2*p) }
+        ]},
+        { cat: { 'zh-hant': "VII. 微積分 (Course 2)", 'ja': "微分積分" }, items: [
+            { t: { 'zh-hant': "旋轉體：圓盤累積", 'ja': "回転体の体積" }, f: "V = \\pi \\int y^2 dx", d: { 'zh-hant': "<span class='hl-p'>幾何含義：</span>無數圓盤疊加。3D展示體積掃描。", 'ja': "微小円盤の累積を示します。" }, g: (p) => {
+                const gr = new THREE.Group();
+                for(let i=0; i<p*20; i++){
+                    const r = 1 + Math.sin(i/4);
+                    const d = new THREE.Mesh(new THREE.CylinderGeometry(r,r,0.1,32), new THREE.MeshStandardMaterial({color:0x84a59d}));
+                    d.position.y = i*0.2 - 2; gr.add(d);
                 }
-                return group;
+                return gr;
             }}
         ]},
-        { cat: { 'zh-hant': "IV. 複數平面", 'ja': "複素数平面" }, items: [
-            { t: { 'zh-hant': "棣美弗：旋轉升華", 'ja': "ド・モアブルの定理" }, f: "z^n = r^n e^{i n\\theta}", d: { 'zh-hant': "<span class='hl-point'>含義：</span>複數的次方代表長度的冪次倍與角度的整數倍增加。3D模型展示了一個螺旋路徑，體現旋轉中擴張的幾何美。", 'ja': "複素数の冪乗は角度の回転と長さの変化。美しいスパイラルを示します。" }, g: (p) => {
-                const pts = []; for(let i=0; i<p*Math.PI*6; i+=0.1) pts.push(new THREE.Vector3(Math.pow(1.05, i)*Math.cos(i), i/10-2, Math.pow(1.05, i)*Math.sin(i)));
+        { cat: { 'zh-hant': "VIII. 複數平面 (理科)", 'ja': "複素数平面" }, items: [
+            { t: { 'zh-hant': "棣美弗：旋轉變換", 'ja': "ド・モアブルの定理" }, f: "z^n = r^n e^{in\\theta}", d: { 'zh-hant': "複數冪次代表長度冪倍與角度累加。", 'ja': "冪乗による空間内のスパイラル。" }, g: (p) => {
+                const pts=[]; for(let i=0; i<p*Math.PI*6; i+=0.1) pts.push(new THREE.Vector3(Math.pow(1.04, i)*Math.cos(i), i/10-2, Math.pow(1.04, i)*Math.sin(i)));
                 return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 128, 0.1, 8, false);
             }}
         ]}
